@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17.0-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-janko_muzykant_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:
