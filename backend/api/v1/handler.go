@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"backend/api/v1/songs"
 	"backend/api/v1/user"
 	"backend/store"
 
@@ -9,6 +10,7 @@ import (
 
 type Handler struct {
 	UserHandler user.UserHandler
+	SongHandler songs.SongHandler
 }
 
 func NewHandler(userS *store.UserStore) (*Handler, error) {
@@ -17,11 +19,18 @@ func NewHandler(userS *store.UserStore) (*Handler, error) {
 		return nil, err
 	}
 
+	sh, err := songs.NewHandler()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Handler{
 		UserHandler: *uh,
+		SongHandler: *sh,
 	}, nil
 }
 
 func (h *Handler) Register(group *echo.Group) {
 	h.UserHandler.Register(group)
+	h.SongHandler.Register(group)
 }
