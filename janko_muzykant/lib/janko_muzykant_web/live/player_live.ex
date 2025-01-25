@@ -7,8 +7,8 @@ defmodule JankoMuzykantWeb.PlayerLive do
     {:ok,
      assign(socket,
        songs: [
-         %{id: 1, title: "Song 1", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
-         %{id: 2, title: "Song 2", url: "https://www.youtube.com/watch?v=qwVp49uwHgk"},
+         %{id: 1, loading: false, duration: nil, title: "Song 1", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+         %{id: 2, loading: false, duration: nil, title: "Song 2", url: "https://www.youtube.com/watch?v=qwVp49uwHgk"},
        ],
        current_song: nil,
        next_song_id: 1,
@@ -92,7 +92,7 @@ defmodule JankoMuzykantWeb.PlayerLive do
             <audio phx-hook="AudioPlayer" id="audioPlayer" controls autoplay>
               <source src={@song_play_url} type="audio/mp3" />
               Your browser does not support the audio element.
-            </audio>
+            </audio> 
           </div>
         <% end %>
       </div>

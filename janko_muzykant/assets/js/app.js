@@ -52,6 +52,7 @@ Hooks.AudioPlayer = {
   },
   updated() {
     console.log("updated");
+    this.el.load()
   }
 }
 

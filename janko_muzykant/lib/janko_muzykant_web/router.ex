@@ -19,6 +19,20 @@ defmodule JankoMuzykantWeb.Router do
 
     live "/player", PlayerLive
     get "/", SongsController, :songs
+    live "/users", UserLive.Index, :index
+    live "/users/new", UserLive.Index, :new
+    live "/users/:id/edit", UserLive.Index, :edit
+
+    live "/users/:id", UserLive.Show, :show
+    live "/users/:id/show/edit", UserLive.Show, :edit
+
+    live "/playlists", PlaylistLive.Index, :index
+    live "/playlists/new", PlaylistLive.Index, :new
+    live "/playlists/:id/edit", PlaylistLive.Index, :edit
+
+    live "/playlists/:id", PlaylistLive.Show, :show
+    live "/playlists/:id/show/edit", PlaylistLive.Show, :edit
+
   end
 
   # Other scopes may use custom stacks.
