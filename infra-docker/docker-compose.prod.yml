@@ -1,0 +1,71 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-janko}
+      POSTGRES_USER: ${DB_USER:-janko}
+      POSTGRES_DB: ${DB_NAME:-janko}
+
+  backend:
+    image: !
+    environment:
+      Signing_Key: ${SIGNING_KEY:-secret}
+      DB_PASSWORD: ${DB_PASSWORD:-janko}
+      DB_USERNAME: ${DB_USER:-janko}
+      DB_NAME: ${DB_NAME:-janko}
+      DB_HOST: db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.rule=Host(`${BACKEND_URL}`)"
+      - "traefik.http.middlewares.backend-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.backend-https.redirectscheme.permanent=true"
+      - "traefik.http.routers.backend-secure.entrypoints=websecure"
+      - "traefik.http.routers.backend-secure.rule=Host(`${BACKEND_URL}`)"
+      - "traefik.http.routers.backend-secure.tls.certResolver=letsencrypt"
+      - "traefik.http.services.backend-secure.loadbalancer.server.port=8080"
+    depends_on:
+     - db  
+  
+  frontend:
+    image: !
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_URL}`)"
+      - "traefik.http.routers.frontend.middlewares=frontend-https"
+      - "traefik.http.middlewares.frontend-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.frontend-https.redirectscheme.permanent=true"
+      - "traefik.http.routers.frontend-secure.entrypoints=websecure"
+      - "traefik.http.routers.frontend-secure.rule=Host(`${FRONTEND_URL}`)"
+      - "traefik.http.routers.frontend-secure.tls.certResolver=letsencrypt"
+      - "traefik.http.services.frontend-secure.loadbalancer.server.port=80"
+  
+  traefik:
+    image: "traefik:v3.0"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.letsencrypt.acme.email=daniel.lipniacki@proton.me"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    environment:
+      - CLOUDFLARE_EMAIL=${CF_EMAIL}
+      - CLOUDFLARE_DNS_API_TOKEN=${CF_TOKEN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
