@@ -7,10 +7,8 @@ import (
 )
 
 type userUpdateRequest struct {
-	User struct {
-		Username string `json:"username" validate:"required"`
-		Password string `json:"password" validate:"required"`
-	} `json:"user"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 func (r *userUpdateRequest) bind(c echo.Context) (*models.User, error) {
@@ -23,9 +21,9 @@ func (r *userUpdateRequest) bind(c echo.Context) (*models.User, error) {
 		return nil, err
 	}
 
-	u.Username = r.User.Username
+	u.Username = r.Username
 
-	h, err := HashPassword(r.User.Password)
+	h, err := HashPassword(r.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -36,10 +34,8 @@ func (r *userUpdateRequest) bind(c echo.Context) (*models.User, error) {
 }
 
 type userLoginRequest struct {
-	User struct {
-		Username string `json:"Username" validate:"required"`
-		Password string `json:"password" validate:"required"`
-	} `json:"user"`
+	Username string `json:"Username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 func (r *userLoginRequest) bind(c echo.Context) error {

@@ -38,16 +38,16 @@ func (h *UserHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
 
-	user, err := h.userStore.GetByUsername(req.User.Username)
+	user, err := h.userStore.GetByUsername(req.Username)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, utils.NewError(err))
 	}
 
 	if user == nil {
-		return c.JSON(http.StatusNotFound, utils.NewError(errors.New("Not found")))
+		return c.JSON(http.StatusNotFound, utils.NewError(errors.New("user not found")))
 	}
 
-	match, err := argon2id.ComparePasswordAndHash(req.User.Password, user.Password)
+	match, err := argon2id.ComparePasswordAndHash(req.Password, user.Password)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
@@ -76,7 +76,7 @@ func (h *UserHandler) GetMe(c echo.Context) error {
 	}
 
 	if user == nil {
-		return c.JSON(http.StatusNotFound, utils.NewError(errors.New("Not found")))
+		return c.JSON(http.StatusNotFound, utils.NewError(errors.New("user not found")))
 	}
 
 	token, err := generateJWT(user.Id, user.Username, h.jwtSecret)

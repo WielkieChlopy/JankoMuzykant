@@ -1,4 +1,17 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"hello_world": "Hello, {name} from pl!"
+	"hello_world": "Hello, {name} from pl!",
+	"login": "Zaloguj się",
+	"email": "Email",
+	"password": "Hasło",
+	"enter_email": "Wprowadź swój email, aby się zalogować",
+	"enter_password": "Wprowadź swoje hasło, aby się zalogować",
+	"or_continue_with": "Lub kontynuuj z",
+	"sign_in_with_google": "Zaloguj się przez Google",
+	"sign_in_with_apple": "Zaloguj się przez Apple",
+	"sign_in_with_github": "Zaloguj się przez GitHub",
+	"sign_in_with_microsoft": "Zaloguj się przez Microsoft",
+	"terms_of_service": "Warunki korzystania z usługi",
+	"privacy_policy": "Polityka prywatności",
+	"by_clicking_continue": "Klikając kontynuuj, zgadzasz się na nasze"
 }

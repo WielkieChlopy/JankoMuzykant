@@ -1,43 +1,27 @@
 package songs
 
 import (
-	"fmt"
-	"os/exec"
-	"strings"
+	"backend/pkg/songsLib"
 
 	"github.com/labstack/echo/v4"
 )
 
-type SongHandler struct{}
+type SongHandler struct {
+	songGetter *songsLib.SongGetter
+}
 
 func NewHandler() (*SongHandler, error) {
-	return &SongHandler{}, nil
+	songGetter, err := songsLib.NewSongGetter()
+	if err != nil {
+		return nil, err
+	}
+	return &SongHandler{
+		songGetter: songGetter,
+	}, nil
 }
 
 func (h *SongHandler) Register(group *echo.Group) {
 	group.POST("/url", h.GetSongURL)
+	group.POST("/details", h.GetSongDetails)
 }
 
-func (h *SongHandler) GetSongURL(c echo.Context) error {
-	req := &songRequest{}
-	if err := req.bind(c); err != nil {
-		return c.JSON(400, map[string]string{
-			"error": "Invalid request body: " + err.Error(),
-		})
-	}
-
-	fmt.Println(req.Url)
-	cmd := exec.Command("/app/bin/yt-dlp", "-f", "bestaudio", "-g", req.Url)
-	output, err := cmd.Output()
-	if err != nil {
-		return c.JSON(500, map[string]string{
-			"error": "Failed to get audio URL: " + err.Error(),
-		})
-	}
-
-	audioURL := strings.TrimSpace(string(output))
-
-	return c.JSON(200, map[string]string{
-		"url": audioURL,
-	})
-}
