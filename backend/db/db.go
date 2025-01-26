@@ -28,13 +28,13 @@ create table if not exists "song"
     play_url      text        not null,
     url           text        not null,
 	user_id       uuid        not null references "user" (id),
-	created_at    timestamp   not null default now(),
+	created_at    timestamp   not null default now()
 );
 
 create table if not exists "queue"
 (
     user_id       uuid        primary key not null references "user" (id),
-	created_at    timestamp   not null default now(),
+	created_at    timestamp   not null default now()
 );
 
 create table if not exists "queue_song"

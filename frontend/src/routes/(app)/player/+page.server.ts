@@ -1,10 +1,9 @@
-import { add_song, get_queue } from '@/components/server/queue';
 import type { PageServerLoad } from './$types';
 import { BACKEND_URL } from '$env/static/private';
 
 export const load: PageServerLoad = async () => {
     return {
-        queue: get_queue()
+        backend_url: BACKEND_URL
     }
 };
 
@@ -21,6 +20,5 @@ export const actions = {
             body: JSON.stringify({ url: url }),
         })
         const data = await response.json()
-        add_song(data)
     }
 }

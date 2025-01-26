@@ -105,16 +105,9 @@ func (s *SongGetter) GetSoundcloudDetails(url string) (SongDetails, error) {
 	}
 
 	track := tracks[0]
-	play_url := ""
-	for _, format := range track.Media.Transcodings {
-		if format.Preset == "mp3_0_1" && format.Format.Protocol == "hls" { //TODO: do we want hsl ? I think so
-			play_url = format.URL
-			break
-		}
-	}
-
-	if play_url == "" {
-		return SongDetails{}, fmt.Errorf("no mp3_0_1 hsl format found")
+	play_url, err := s.sc.GetDownloadURL(url, "progressive")
+	if err != nil {
+		return SongDetails{}, fmt.Errorf("failed to get download url: %w", err)
 	}
 
 	return SongDetails{
