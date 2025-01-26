@@ -74,7 +74,7 @@ func (s *SongGetter) GetYoutubeDetails(url string) (SongDetails, error) {
 	fmt.Println(output_str)
 	splited := strings.Split(output_str, "\n")
 
-	splited_time := strings.Split(splited[1], ":")
+	splited_time := strings.Split(splited[2], ":")
 	duration_ms := int64(0)
 	//TODO: test, code generated
 	for i := 0; i < len(splited_time); i++ {
@@ -107,7 +107,7 @@ func (s *SongGetter) GetSoundcloudDetails(url string) (SongDetails, error) {
 	track := tracks[0]
 	play_url := ""
 	for _, format := range track.Media.Transcodings {
-		if format.Preset == "mp3_0_1" && format.Format.Protocol == "HLS" { //TODO: do we want hsl ? I think so
+		if format.Preset == "mp3_0_1" && format.Format.Protocol == "hls" { //TODO: do we want hsl ? I think so
 			play_url = format.URL
 			break
 		}

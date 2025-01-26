@@ -4,8 +4,6 @@ import { BACKEND_URL } from '$env/static/private';
 
 export const load: PageServerLoad = async () => {
     return {
-        playingSong: null,
-        playingSongUrl: null,
         queue: get_queue()
     }
 };

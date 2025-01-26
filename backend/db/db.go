@@ -16,6 +16,23 @@ create table if not exists "user"
     id            uuid primary key default gen_random_uuid(),
     username      text unique not null,
     password      text        not null
+);
+
+create table if not exists "song"
+(
+    id            uuid primary key default gen_random_uuid(),
+    title         text        not null,
+    duration_ms   int         not null,
+    play_url      text        not null,
+    url           text        not null,
+	user_id       uuid        not null references "user" (id)
+);
+
+create table if not exists "queue"
+(
+    id            uuid primary key default gen_random_uuid(),
+    user_id       uuid        not null,
+    song_id       uuid        not null
 );`
 
 type DbConfig struct {

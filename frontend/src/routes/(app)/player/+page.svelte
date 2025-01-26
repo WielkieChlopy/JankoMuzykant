@@ -1,7 +1,26 @@
 <script lang="ts">
 	import * as Card from "@/components/ui/card/index.js";
 	let { data } = $props();
-    console.log(data)
+
+	let playingSong = $state({
+		url: '',
+		play_url: '',
+		title: '',
+		duration: ''
+	})
+
+	let audio: HTMLAudioElement | null = null
+
+	$effect(() => {
+		if (data.queue.length > 0) {
+			console.log('data.queue', data.queue)
+			playingSong = data.queue[0]
+			if (audio) {
+				audio.src = playingSong.play_url
+				audio.load()
+			}
+		}
+	})
 </script>
 
 <div>
@@ -27,7 +46,7 @@
 		  <Card.Description>Playing</Card.Description>
 		</Card.Header>
 		<Card.Content>
-			<audio id="player" src={data.url} controls autoplay></audio>
+			<audio bind:this={audio} src={playingSong.play_url} controls autoplay></audio>
 		</Card.Content>
 	  </Card.Root>
 </div>
