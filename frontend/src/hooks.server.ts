@@ -5,15 +5,17 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '$env/static/private';
 
 const handleParaglide: Handle = i18n.handle();
+
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const token = event.cookies.get('token');
 	if (!token) {
 		return resolve(event);
 	}
-	
+
 	let decoded;
 	try {
 		decoded = jwt.verify(token, JWT_SECRET);
+
 		if (typeof decoded != 'object' || decoded === null) {;
 			return resolve(event);
 		}
@@ -21,8 +23,8 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
-	const { id, email, exp } = decoded as { id: string; email: string; exp: number };
-	event.locals.user = { id, email, exp };
+	const { id, username, exp } = decoded as { id: string; username: string; exp: number };
+	event.locals.user = { id, username, exp };
 	event.locals.token = token;
 
 	return resolve(event);

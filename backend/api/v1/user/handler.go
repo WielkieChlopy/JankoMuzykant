@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	echojwt "github.com/labstack/echo-jwt"
 	"github.com/labstack/echo/v4"
+	auth "backend/auth"
 )
 
 type UserHandler struct {
@@ -17,7 +18,7 @@ type UserHandler struct {
 func NewHandler(userS Store) (*UserHandler, error) {
 	secret, ok := os.LookupEnv("Signing_Key")
 	if !ok {
-		return nil, errors.New("No secret key ")
+		return nil, errors.New("no secret key ")
 	}
 
 	return &UserHandler{
@@ -39,11 +40,11 @@ func (h *UserHandler) Register(group *echo.Group) {
 		SigningKey: []byte(h.jwtSecret),
 		Skipper:    skipper,
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
-			return new(jwtCustomClaims)
+			return new(auth.JwtCustomClaims)
 		},
 	})
 
-	group.POST("/singup", h.SignUp)
+	group.POST("/signup", h.SignUp)
 	group.POST("/login", h.Login)
 
 	user := group.Group("/user", jwtMiddleware)

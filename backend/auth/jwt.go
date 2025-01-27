@@ -8,14 +8,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type jwtCustomClaims struct {
+type JwtCustomClaims struct {
 	Id       uuid.UUID `json:"id"`
 	Username string    `json:"username"`
 	jwt.RegisteredClaims
 }
 
-func generateJWT(id uuid.UUID, username string, secretKey []byte) (string, error) {
-	claims := jwtCustomClaims{
+func GenerateJWT(id uuid.UUID, username string, secretKey []byte) (string, error) {
+	claims := JwtCustomClaims{
 		id,
 		username,
 		jwt.RegisteredClaims{
@@ -32,8 +32,8 @@ func generateJWT(id uuid.UUID, username string, secretKey []byte) (string, error
 	return tokenString, nil
 }
 
-func userIDFromToken(c echo.Context) (uuid.UUID, error) {
+func UserIDFromToken(c echo.Context) (uuid.UUID, error) {
 	token := c.Get("user").(*jwt.Token)
-	claims := token.Claims.(*jwtCustomClaims)
+	claims := token.Claims.(*JwtCustomClaims)
 	return claims.Id, nil
 }

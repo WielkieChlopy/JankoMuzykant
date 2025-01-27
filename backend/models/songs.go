@@ -1,6 +1,10 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Song struct {
 	Id         uuid.UUID `db:"id"`
@@ -9,4 +13,5 @@ type Song struct {
 	PlayUrl    string    `db:"play_url"`
 	URL        string    `db:"url"`
 	UserId     uuid.UUID `db:"user_id"`
+	CreatedAt  time.Time `db:"created_at"`
 }

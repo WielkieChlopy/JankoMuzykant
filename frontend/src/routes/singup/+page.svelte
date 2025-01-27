@@ -28,7 +28,7 @@
 			<div class={cn("grid gap-6", className)} {...$$restProps}>
 				<form 
 					method="POST"
-					action="?/login" 
+					action="?/signup" 
 					use:enhance={() => {
 					isLoading = true;
 			
@@ -63,7 +63,7 @@
 							{#if isLoading}
 								<Icons.spinner class="mr-2 h-4 w-4 animate-spin" />
 							{/if}
-							{m.login()}
+							{m.signup()}
 						</Button>
 					</div>
 				</form>

@@ -2,13 +2,13 @@ import { BACKEND_URL } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
 
 export const actions = {
-	login: async ({ cookies, request, url }) => {
+	signup: async ({ cookies, request, url }) => {
 		const formData = await request.formData();
 		const username = formData.get('username');
 		const password = formData.get('password');
 		const redirectPath = url.searchParams.get('redirect') || '/player';
 
-		const response = await fetch(`${BACKEND_URL}/api/v1/login`, {
+		const response = await fetch(`${BACKEND_URL}/api/v1/signup`, {
 			method: 'POST',
 			body: JSON.stringify({ username, password }),
 			headers: {
@@ -29,9 +29,4 @@ export const actions = {
 			return fail(401, { error: 'Invalid credentials' });
 		}
 	},
-
-    logout: async ({ cookies }) => {
-        cookies.delete('token', { path: '/' });
-        return { success: true };
-    }
 };

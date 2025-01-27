@@ -14,10 +14,11 @@
 	async function play_song(e: SubmitEvent) {
 		e.preventDefault()
 		const formData = new FormData(e.target as HTMLFormElement)
-		const response = await fetch(`${data.backend_url}/api/v1/details`, {
+		const response = await fetch(`${data.backend_url}/api/v1/songs/details`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${data.token}`
 			},
 			body: JSON.stringify({ url: formData.get('url') }),
 		})

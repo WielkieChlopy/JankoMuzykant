@@ -15,7 +15,7 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     environment:
-      Signing_Key: "secret"
+      Signing_Key: "secret-test-key"
       DB_PASSWORD: janko
       DB_USERNAME: janko
       DB_DATABASE: janko

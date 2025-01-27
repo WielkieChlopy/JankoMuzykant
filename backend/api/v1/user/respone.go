@@ -7,31 +7,27 @@ import (
 )
 
 type userTokenResponse struct {
-	User struct {
-		Id       uuid.UUID `json:"id"`
-		Username string    `json:"username"`
-		Token    string    `json:"token"`
-	} `json:"user"`
+	Id       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Token    string    `json:"token"`
 }
 
 func newUserTokenResponse(u *models.User, token string) *userTokenResponse {
 	r := &userTokenResponse{}
-	r.User.Username = u.Username
-	r.User.Id = u.Id
-	r.User.Token = token
+	r.Username = u.Username
+	r.Id = u.Id
+	r.Token = token
 	return r
 }
 
 type userResponse struct {
-	User struct {
-		Id       uuid.UUID `json:"id"`
-		Username string    `json:"username"`
-	} `json:"user"`
+	Id       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
 }
 
 func newUserResponse(u *models.User) *userResponse {
 	r := &userResponse{}
-	r.User.Username = u.Username
-	r.User.Id = u.Id
+	r.Username = u.Username
+	r.Id = u.Id
 	return r
 }

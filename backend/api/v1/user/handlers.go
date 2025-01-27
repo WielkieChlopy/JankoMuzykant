@@ -10,6 +10,7 @@ import (
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	auth "backend/auth"
 )
 
 func (h *UserHandler) SignUp(c echo.Context) error {
@@ -24,7 +25,7 @@ func (h *UserHandler) SignUp(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
 
-	token, err := generateJWT(user.Id, user.Username, h.jwtSecret)
+	token, err := auth.GenerateJWT(user.Id, user.Username, h.jwtSecret)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
@@ -56,7 +57,7 @@ func (h *UserHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, utils.NewError(errors.New("Unauthorized")))
 	}
 
-	token, err := generateJWT(user.Id, user.Username, h.jwtSecret)
+	token, err := auth.GenerateJWT(user.Id, user.Username, h.jwtSecret)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
@@ -65,7 +66,7 @@ func (h *UserHandler) Login(c echo.Context) error {
 }
 
 func (h *UserHandler) GetMe(c echo.Context) error {
-	id, err := userIDFromToken(c)
+	id, err := auth.UserIDFromToken(c)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, utils.NewError(err))
 	}
@@ -79,7 +80,7 @@ func (h *UserHandler) GetMe(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, utils.NewError(errors.New("user not found")))
 	}
 
-	token, err := generateJWT(user.Id, user.Username, h.jwtSecret)
+	token, err := auth.GenerateJWT(user.Id, user.Username, h.jwtSecret)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
@@ -103,7 +104,7 @@ func (h *UserHandler) GetUser(c echo.Context) error {
 }
 
 func (h *UserHandler) UpdateMe(c echo.Context) error {
-	id, err := userIDFromToken(c)
+	id, err := auth.UserIDFromToken(c)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, utils.NewError(err))
 	}
@@ -117,8 +118,8 @@ func (h *UserHandler) UpdateMe(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("XD %v \n", user)
-	token, err := generateJWT(user.Id, user.Username, h.jwtSecret)
+
+	token, err := auth.GenerateJWT(user.Id, user.Username, h.jwtSecret)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}

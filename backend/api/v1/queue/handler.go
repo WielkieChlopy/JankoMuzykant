@@ -1,29 +1,43 @@
 package queue
 
 import (
+	"os"
 	"backend/utils"
 	"net/http"
-
+	"errors"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	echojwt "github.com/labstack/echo-jwt"
+	auth "backend/auth"
 )
 
 type QueueHandler struct {
 	store Store
+	jwtSecret []byte
 }
 
 func NewHandler(store Store) (*QueueHandler, error) {
+	secret, ok := os.LookupEnv("Signing_Key")
+	if !ok {
+		return nil, errors.New("no secret key ")
+	}
 	return &QueueHandler{
 		store: store,
+		jwtSecret: []byte(secret),
 	}, nil
 }
 
 func (h *QueueHandler) Register(group *echo.Group) {
-	group.POST("/add", h.AddSong)
-	group.POST("/next", h.NextSong)
-	group.POST("/clear", h.ClearQueue)
-	group.POST("/remove", h.RemoveSong)
-	group.GET("/get", h.GetQueue)
+	jwtMiddleware := echojwt.WithConfig(echojwt.Config{
+		SigningKey: []byte(h.jwtSecret),
+	})
+
+	queue := group.Group("/queue", jwtMiddleware)
+	queue.POST("/add", h.AddSong)
+	queue.POST("/next", h.NextSong)
+	queue.POST("/clear", h.ClearQueue)
+	queue.POST("/remove", h.RemoveSong)
+	queue.GET("/get", h.GetQueue)
 }
 
 func (h *QueueHandler) ensureQueueExists(userID uuid.UUID) error {
@@ -38,7 +52,10 @@ func (h *QueueHandler) ensureQueueExists(userID uuid.UUID) error {
 }
 
 func (h *QueueHandler) AddSong(c echo.Context) error {
-	userID := c.Get("user_id").(uuid.UUID)
+	userID, err := auth.UserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
 	req := &addSongRequest{}
 
 	if err := req.bind(c); err != nil {
@@ -57,7 +74,10 @@ func (h *QueueHandler) AddSong(c echo.Context) error {
 }
 
 func (h *QueueHandler) NextSong(c echo.Context) error {
-	userID := c.Get("user_id").(uuid.UUID)
+	userID, err := auth.UserIDFromToken(c)
+		if err != nil {
+			return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
 
 	if err := h.ensureQueueExists(userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
@@ -71,7 +91,10 @@ func (h *QueueHandler) NextSong(c echo.Context) error {
 }
 
 func (h *QueueHandler) ClearQueue(c echo.Context) error {
-	userID := c.Get("user_id").(uuid.UUID)
+	userID, err := auth.UserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
 
 	if err := h.ensureQueueExists(userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
@@ -85,7 +108,10 @@ func (h *QueueHandler) ClearQueue(c echo.Context) error {
 }
 
 func (h *QueueHandler) RemoveSong(c echo.Context) error {
-	userID := c.Get("user_id").(uuid.UUID)
+	userID, err := auth.UserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
 	req := &removeSongRequest{}
 
 	if err := req.bind(c); err != nil {
@@ -104,7 +130,10 @@ func (h *QueueHandler) RemoveSong(c echo.Context) error {
 }
 
 func (h *QueueHandler) GetQueue(c echo.Context) error {
-	userID := c.Get("user_id").(uuid.UUID)
+	userID, err := auth.UserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
 
 	if err := h.ensureQueueExists(userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
