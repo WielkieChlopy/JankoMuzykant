@@ -30,7 +30,7 @@ func NewHandler(userS Store) (*UserHandler, error) {
 func (h *UserHandler) Register(group *echo.Group) {
 	skipper := func(c echo.Context) bool {
 		// Skip middleware if path is equal 'login'
-		if c.Request().URL.Path == "/login" || c.Request().URL.Path == "/singup" {
+		if c.Request().URL.Path == "/login" || c.Request().URL.Path == "/signup" {
 			return true
 		}
 		return false
