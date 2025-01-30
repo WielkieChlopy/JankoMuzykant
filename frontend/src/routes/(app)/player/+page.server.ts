@@ -13,7 +13,7 @@ export const actions = {
         const formData = await request.formData();
         const url = formData.get('url');
 
-        const response = await fetch(`${BACKEND_URL}/api/v1/details`, {
+        const response = await fetch(`${BACKEND_URL}/api/v1/songs/details`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
