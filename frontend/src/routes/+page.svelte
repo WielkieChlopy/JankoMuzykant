@@ -16,8 +16,12 @@
             <h1 class="text-4xl">Janko Muzykant</h1>
             <div class="mt-10"></div>
             <div class="flex gap-2 w-full">
-                <Button class="w-full"><a href="/auth">Login</a></Button>
-                <Button class="w-full"><a href="/signup">Signup</a></Button>
+                <a href="/auth" class="w-full">
+                    <Button class="w-full">Login</Button>
+                </a>
+                <a href="/signup" class="w-full">
+                    <Button class="w-full">Signup</Button>
+                </a>
             </div>
         </div>
     </AnimatedGradient>
