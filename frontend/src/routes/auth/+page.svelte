@@ -42,8 +42,11 @@
 					isLoading = true;
 			
 						return async ({ update }) => {
-							await update();
-							isLoading = false;
+							try {
+								await update();
+							} finally {
+								isLoading = false;
+							}
 						};
 					}}
 				>

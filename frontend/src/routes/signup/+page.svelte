@@ -43,8 +43,11 @@
 					isLoading = true;
 			
 						return async ({ update }) => {
-							await update();
-							isLoading = false;
+							try {
+								await update();
+							} finally {
+								isLoading = false;
+							}
 						};
 					}}
 				>
@@ -60,6 +63,7 @@
 								autocorrect="off"
 								disabled={isLoading}
 								required
+								minlength={3}
 							/>
 							<Label class="sr-only" for="password">{m.password()}</Label>
 							<Input
@@ -70,8 +74,8 @@
 								disabled={isLoading}
 								required
 								minlength={8}
-								pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]$"
-								title="Password must be at least 8 characters long and contain at least one letter and one number"
+								pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]$"
+								title="Password must be at least 8 characters long and contain at least one letter, one number, and may include special characters (@$!%*?&)"
 							/>
 						</div>
 						<Button type="submit" disabled={isLoading}>

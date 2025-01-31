@@ -26,9 +26,9 @@ export const actions = {
 			const data = await response.json();
 			cookies.set('token', data.token, {
 				path: '/',
-				// httpOnly: true,
-				// secure: true,
-				// sameSite: 'strict', //todo:
+				httpOnly: true,
+				secure: true,
+				sameSite: 'strict', //todo:
 			});
 			return redirect(303, redirectPath);
 		} else {
