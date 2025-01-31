@@ -6,11 +6,20 @@
 	import { cn } from "$lib/utils.js";
 	import { enhance } from '$app/forms';
 	import * as m from '$lib/paraglide/messages.js';
+	import { toast } from "svelte-sonner";
 
-	let className: string | undefined | null = undefined;
+	let className: string | undefined | null = $state(undefined);
 	export { className as class };
 
-	let isLoading = false;
+	let isLoading = $state(false)
+	
+	let { form } = $props();
+
+	$effect(() => {
+		if (form?.error) {
+			toast.error(form.error);
+		}
+	});
 </script>
 
 <div
@@ -25,7 +34,7 @@
 				</p>
 			</div>
 			
-			<div class={cn("grid gap-6", className)} {...$$restProps}>
+			<div class={cn("grid gap-6", className)}>
 				<form 
 					method="POST"
 					action="?/login" 
@@ -33,8 +42,11 @@
 					isLoading = true;
 			
 						return async ({ update }) => {
-							await update();
-							isLoading = false;
+							try {
+								await update();
+							} finally {
+								isLoading = false;
+							}
 						};
 					}}
 				>
@@ -49,6 +61,7 @@
 								autocapitalize="none"
 								autocorrect="off"
 								disabled={isLoading}
+								required
 							/>
 							<Label class="sr-only" for="password">{m.password()}</Label>
 							<Input
@@ -57,6 +70,7 @@
 								placeholder="********"
 								type="password"
 								disabled={isLoading}
+								required
 							/>
 						</div>
 						<Button type="submit" disabled={isLoading}>
