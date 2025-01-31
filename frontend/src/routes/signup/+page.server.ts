@@ -8,13 +8,19 @@ export const actions = {
 		const password = formData.get('password');
 		const redirectPath = url.searchParams.get('redirect') || '/player';
 
-		const response = await fetch(`${BACKEND_URL}/api/v1/signup`, {
-			method: 'POST',
-			body: JSON.stringify({ username, password }),
-			headers: {
+		let response;
+		try {
+			response = await fetch(`${BACKEND_URL}/api/v1/signup`, {
+				method: 'POST',
+				body: JSON.stringify({ username, password }),
+				headers: {
 				'Content-Type': 'application/json',
 			},
 		});
+		} catch (error) {
+			console.error(error);
+			return fail(500, { error: 'Internal server error' });
+		}
 
 		if (response.ok) {
 			const data = await response.json();
@@ -26,7 +32,7 @@ export const actions = {
 			});
 			return redirect(303, redirectPath);
 		} else {
-			return fail(401, { error: 'Invalid credentials' });
+			return fail(422, { error: 'Invalid credentials' });
 		}
 	},
 };
