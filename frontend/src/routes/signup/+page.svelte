@@ -74,7 +74,7 @@
 								disabled={isLoading}
 								required
 								minlength={8}
-								pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]$"
+								pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]+$"
 								title="Password must be at least 8 characters long and contain at least one letter, one number, and may include special characters (@$!%*?&)"
 							/>
 						</div>

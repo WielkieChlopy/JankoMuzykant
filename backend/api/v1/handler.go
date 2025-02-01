@@ -13,13 +13,13 @@ type Handler struct {
 	SongHandler songs.SongHandler
 }
 
-func NewHandler(userS *store.UserStore) (*Handler, error) {
+func NewHandler(userS *store.UserStore, songS *store.SongStore) (*Handler, error) {
 	uh, err := user.NewHandler(userS)
 	if err != nil {
 		return nil, err
 	}
 
-	sh, err := songs.NewHandler()
+	sh, err := songs.NewHandler(songS)
 	if err != nil {
 		return nil, err
 	}

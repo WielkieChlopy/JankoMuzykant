@@ -43,6 +43,19 @@ create table if not exists "queue_song"
     queue_id      uuid        not null,
     song_id       uuid        not null
 );
+
+create unlogged table if not exists "songs_cache"
+(
+    song_id       text        not null,
+    source        text        not null,
+	song_url      text        not null,
+	play_url      text        not null,
+	duration_ms   int         not null,
+	title         text        not null,
+	expires_at    timestamp   not null,
+    created_at    timestamp   not null default now(),
+	primary key (song_id, source)
+);
 `
 
 type DbConfig struct {

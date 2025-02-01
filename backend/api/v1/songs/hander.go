@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"backend/pkg/songsLib"
-
+	"backend/store"
 	"github.com/labstack/echo/v4"
 	echojwt "github.com/labstack/echo-jwt"
 )
@@ -15,8 +15,8 @@ type SongHandler struct {
 	jwtSecret []byte
 }
 
-func NewHandler() (*SongHandler, error) {
-	songGetter, err := songsLib.NewSongGetter()
+func NewHandler(ss *store.SongStore) (*SongHandler, error) {
+	songGetter, err := songsLib.NewSongGetter(ss)
 	if err != nil {
 		return nil, err
 	}

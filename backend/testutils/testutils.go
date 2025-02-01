@@ -17,6 +17,7 @@ import (
 type Test struct {
 	Database  *sqlx.DB
 	UserStore *store.UserStore
+	SongStore *store.SongStore
 	Handler   *v1.Handler
 	Router    *echo.Echo
 }
@@ -31,8 +32,8 @@ func SetupTest() (*Test, error) {
 
 	t.Database = db
 	t.UserStore = store.NewUserStore(db)
-
-	h, err := v1.NewHandler(t.UserStore)
+	t.SongStore = store.NewSongStore(db)
+	h, err := v1.NewHandler(t.UserStore, t.SongStore)
 	if err != nil {
 		return nil, err
 	}
