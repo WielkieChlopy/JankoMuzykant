@@ -178,7 +178,7 @@ func (s *SongGetter) getSongId(u *url.URL, source string) string {
 func (s *SongGetter) insertYoutubeSongInCache(song_url string, song_details SongDetails) {
 	u, err := url.Parse(song_url)
 	if err != nil {
-		fmt.Println("failed to parse youtube url: %w", err)
+		fmt.Printf("failed to parse youtube url: %v\n", err)
 		return
 	}
 
@@ -212,7 +212,7 @@ func (s *SongGetter) insertYoutubeSongInCache(song_url string, song_details Song
 func (s *SongGetter) insertSoundcloudSongInCache(song_url string, song_details SongDetails) {
 	u, err := url.Parse(song_url)
 	if err != nil {
-		fmt.Println("failed to parse youtube url: %w", err)
+		fmt.Printf("failed to parse youtube url: %v\n", err)
 		return
 	}
 
@@ -223,7 +223,7 @@ func (s *SongGetter) insertSoundcloudSongInCache(song_url string, song_details S
 
 
 func (s *SongGetter) insertSongInCache(song_id string, song_url string, source string, expires_at int64, song_details SongDetails) {
-	s.ss.InsertSong(&models.SongMapping{
+	err := s.ss.InsertSong(&models.SongMapping{
 		SongID:     song_id,
 		Source:     source,
 		ExpiresAt:  time.Unix(expires_at, 0),
@@ -232,4 +232,7 @@ func (s *SongGetter) insertSongInCache(song_id string, song_url string, source s
 		DurationMS: int(song_details.DurationMS),
 		PlayURL:    song_details.PlayUrl,
 	})
+	if err != nil {
+		fmt.Printf("failed to insert song in cache: %v\n", err)
+	}
 }
