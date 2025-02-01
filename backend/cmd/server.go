@@ -13,8 +13,9 @@ import (
 func main() {
 	db := db.NewDb()
 	us := store.NewUserStore(db)
+	songS := store.NewSongStore(db)
 
-	h, err := v1.NewHandler(us)
+	h, err := v1.NewHandler(us, songS)
 	if err != nil {
 		log.Fatal(err)
 	}

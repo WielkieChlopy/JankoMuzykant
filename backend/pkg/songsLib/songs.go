@@ -8,6 +8,10 @@ import (
 	"strconv"
 	"strings"
 
+	"backend/models"
+	"backend/store"
+	"time"
+
 	soundcloudapi "github.com/zackradisic/soundcloud-api"
 )
 
@@ -20,16 +24,17 @@ type SongDetails struct {
 // better name, we need stuckt to have an place to put the client for soundcloud
 type SongGetter struct {
 	sc *soundcloudapi.API
+	ss *store.SongStore
 }
 
-func NewSongGetter() (*SongGetter, error) {
+func NewSongGetter(ss *store.SongStore) (*SongGetter, error) {
 	sc, err := soundcloudapi.New(soundcloudapi.APIOptions{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &SongGetter{sc: sc}, nil
+	return &SongGetter{sc: sc, ss: ss}, nil
 }
 
 func (s *SongGetter) GetSongDetails(song_url string) (SongDetails, error) {
@@ -43,13 +48,48 @@ func (s *SongGetter) GetSongDetails(song_url string) (SongDetails, error) {
 		return SongDetails{}, fmt.Errorf("invalid url")
 	}
 
-	if strings.HasSuffix(u.Host, "youtube.com") || strings.HasSuffix(u.Host, "youtu.be") {
-		return s.GetYoutubeDetails(song_url)
-	} else if strings.HasSuffix(u.Host, "soundcloud.com") {
-		return s.GetSoundcloudDetails(song_url)
+	source := GetSongSource(u)
+	song_id := s.getSongId(u, source)
+
+	song_in_cache, err := s.ss.IsSongInCache(song_id, source)
+	if err != nil {
+		return SongDetails{}, fmt.Errorf("failed to get song: %w", err)
+	}
+
+	if song_in_cache {
+		song, err := s.ss.GetSong(song_id, source)
+		if err != nil {
+			return SongDetails{}, fmt.Errorf("failed to get song: %w", err)
+		}
+
+		fmt.Println("returning song from cache")
+		if song.ExpiresAt.After(time.Now()) {
+			return SongDetails{
+				Title:      song.Title,
+				DurationMS: int64(song.DurationMS),
+				PlayUrl:    song.PlayURL,
+			}, nil
+		}
+	}
+
+	switch source {
+		case "youtube":
+			return s.GetYoutubeDetails(song_url)
+		case "soundcloud":
+			return s.GetSoundcloudDetails(song_url)
 	}
 
 	return SongDetails{}, fmt.Errorf("unsupported url")
+}
+
+func GetSongSource(u *url.URL) string {
+	source := ""
+	if strings.HasSuffix(u.Host, "youtube.com") || strings.HasSuffix(u.Host, "youtu.be") {
+		source = "youtube"
+	} else if strings.HasSuffix(u.Host, "soundcloud.com") {
+		source = "soundcloud"
+	}
+	return source
 }
 
 func (s *SongGetter) VerifyURL(song_url *url.URL) (bool, error) {
@@ -85,11 +125,15 @@ func (s *SongGetter) GetYoutubeDetails(url string) (SongDetails, error) {
 		duration_ms += int64(math.Pow(60, float64(len(splited_time)-i-1))) * val
 	}
 
-	return SongDetails{
+	details := SongDetails{
 		Title:      splited[0],
 		DurationMS: duration_ms,
 		PlayUrl:    splited[1],
-	}, nil
+	}
+
+	defer s.insertYoutubeSongInCache(url, details)
+
+	return details, nil
 }
 
 func (s *SongGetter) GetSoundcloudDetails(url string) (SongDetails, error) {
@@ -110,9 +154,82 @@ func (s *SongGetter) GetSoundcloudDetails(url string) (SongDetails, error) {
 		return SongDetails{}, fmt.Errorf("failed to get download url: %w", err)
 	}
 
-	return SongDetails{
+	details := SongDetails{
 		Title:      track.Title,
 		DurationMS: track.FullDurationMS,
 		PlayUrl:    play_url,
-	}, nil
+	}
+
+	defer s.insertSoundcloudSongInCache(url, details)
+
+	return details, nil
+}
+
+func (s *SongGetter) getSongId(u *url.URL, source string) string {
+	if source == "youtube" {
+		return u.Query().Get("v")
+	} else if source == "soundcloud" {
+		return u.Path
+	}
+
+	return ""
+}
+
+func (s *SongGetter) insertYoutubeSongInCache(song_url string, song_details SongDetails) {
+	u, err := url.Parse(song_url)
+	if err != nil {
+		fmt.Println("failed to parse youtube url: %w", err)
+		return
+	}
+
+	video_id := u.Query().Get("v")
+	if video_id == "" {
+		fmt.Println("failed to get video id")
+		return
+	}
+	
+	play_url, err := url.Parse(song_details.PlayUrl)
+	if err != nil {
+		fmt.Println("failed to parse youtube url: %w", err)
+		return
+	}
+
+	expires := play_url.Query().Get("expire")
+	if expires == "" {
+		fmt.Println("failed to get expires")
+		return
+	}
+
+	expires_at, err := strconv.ParseInt(expires, 10, 64)
+	if err != nil {
+		fmt.Println("failed to parse expires: %w", err)
+		return
+	}
+
+	s.insertSongInCache(video_id, song_url, "youtube", expires_at, song_details)
+}
+
+func (s *SongGetter) insertSoundcloudSongInCache(song_url string, song_details SongDetails) {
+	u, err := url.Parse(song_url)
+	if err != nil {
+		fmt.Println("failed to parse youtube url: %w", err)
+		return
+	}
+
+	track_id := u.Path
+	//TODO: test how long lings last for, currently 24 hours for testing 
+	s.insertSongInCache(track_id, song_url, "soundcloud", time.Now().Add(time.Hour*24).Unix(), song_details)
+}
+
+
+func (s *SongGetter) insertSongInCache(song_id string, song_url string, source string, expires_at int64, song_details SongDetails) {
+	s.ss.InsertSong(&models.SongMapping{
+		SongID:     song_id,
+		Source:     source,
+		ExpiresAt:  time.Unix(expires_at, 0),
+		SongURL:    song_url,
+		Title:      song_details.Title,
+		DurationMS: int(song_details.DurationMS),
+		PlayURL:    song_details.PlayUrl,
+	})
 }
