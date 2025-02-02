@@ -6,7 +6,7 @@ import (
 )
 
 type addSongRequest struct {
-	SongID uuid.UUID `json:"song_id" validate:"required"`
+	URL string `json:"url" validate:"required"`
 }
 
 func (r *addSongRequest) bind(c echo.Context) error {

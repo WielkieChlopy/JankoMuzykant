@@ -62,7 +62,7 @@
 		</Card.Content>
 	  </Card.Root>
 
-	<!-- <Card.Root>
+	<Card.Root>
 		<Card.Header>
 		  <Card.Title>Queue</Card.Title>
 		</Card.Header>
@@ -73,6 +73,6 @@
 				{/each}
 			</ul>
 		</Card.Content>
-	  </Card.Root> -->
+	  </Card.Root>
 
 </div>
