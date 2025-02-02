@@ -28,6 +28,32 @@ func (ss QueueStore) InitQueue(userId uuid.UUID) error {
 	return err
 }
 
+func (ss QueueStore) ChangeCurrentSong(queueId uuid.UUID, songId uuid.UUID) error {
+	tx, err := ss.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var position int
+	err = ss.db.Get(&position, "select current_position from queue where id = $1", queueId)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("update queue_song set song_id = $1 where queue_id = $2 and position = $3", songId, queueId, position)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("update queue set current_song_id = $1 where id = $2", songId, queueId)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
 func (ss QueueStore) AddSongToQueue(queueId uuid.UUID, songId uuid.UUID) error {
 	tx, err := ss.db.Beginx()
 	if err != nil {
@@ -53,10 +79,42 @@ func (ss QueueStore) AddSongToQueue(queueId uuid.UUID, songId uuid.UUID) error {
 	return tx.Commit()
 }
 
-func (ss QueueStore) NextSong(queueId uuid.UUID) (*models.Song, error) {
+func (ss QueueStore) GetNextSong(queueId uuid.UUID) (*models.Song, error) {
 	song := &models.Song{}
 	err := ss.db.Get(song, "select s.* from songs where song_id = (select song_id from queue_song where queue_id = $1 order by position asc limit 1)", queueId)
 	return song, err
+}
+
+func (ss QueueStore) PlayNextSong(queueId uuid.UUID) (*models.Song, error) {
+	tx, err := ss.db.Beginx()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	
+	type NextSongPos struct {
+		SongId uuid.UUID `db:"song_id"`
+		Position int `db:"position"`
+	}
+
+	var nextSongPos NextSongPos
+	err = tx.Get(&nextSongPos, "select song_id, position from queue_song where queue_id = $1 order by position asc offset 1 limit 1", queueId)
+	if err != nil {
+		return nil, err
+	}
+
+	song := &models.Song{}
+	err = tx.Get(song, "select s.* from songs where song_id = $1", nextSongPos)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec("update queue set current_song_id = $1, current_position = $2 where id = $3", song.Id, nextSongPos.Position, queueId)
+	if err != nil {
+		return nil, err
+	}
+
+	return song, tx.Commit()
 }
 
 func (ss QueueStore) GetQueue(queueId uuid.UUID) ([]models.Song, error) {

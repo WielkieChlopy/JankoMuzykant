@@ -40,10 +40,12 @@ func (h *QueueHandler) Register(group *echo.Group) {
 	})
 
 	queue := group.Group("/queue", jwtMiddleware)
-	queue.POST("", h.AddSong)
-	queue.POST("/next", h.NextSong)
-	queue.DELETE("", h.ClearQueue)
-	queue.POST("/remove", h.RemoveSong)
+	queue.POST("/add", h.AddSong)
+	queue.POST("/next", h.PlayNextSong)
+	queue.GET("/next", h.GetNextSong)
+	queue.POST("/play", h.PlaySong)
+	queue.DELETE("/clear", h.ClearQueue)
+	queue.DELETE("/remove", h.RemoveSong)
 	queue.GET("", h.GetQueue)
 }
 

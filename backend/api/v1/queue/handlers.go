@@ -11,6 +11,7 @@ import (
 	auth "backend/auth"
 	"errors"
 	"backend/models"
+	"backend/pkg/songsLib"
 )
 
 func (h *QueueHandler) ensureQueueExists(userID uuid.UUID) error {
@@ -22,6 +23,41 @@ func (h *QueueHandler) ensureQueueExists(userID uuid.UUID) error {
 		return h.queueStore.InitQueue(userID)
 	}
 	return nil
+}
+
+func (h *QueueHandler) PlaySong(c echo.Context) error {
+	userID, err := auth.UserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
+	req := &addSongRequest{}
+
+	if err := req.bind(c); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+	}
+
+	if err := h.ensureQueueExists(userID); err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	}
+
+	u, err := url.Parse(req.URL)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+	}
+
+	source := h.songGetter.GetSongSource(u)
+	source_songId := h.songGetter.GetSongId(u, source)
+
+	song, details, err := EnsureSongExistance(h, source, source_songId, req, c)
+	if err != nil {
+		return err
+	}
+
+	if err := h.queueStore.ChangeCurrentSong(userID, song.Id); err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	}
+
+	return c.JSON(http.StatusOK, details)
 }
 
 func (h *QueueHandler) AddSong(c echo.Context) error {
@@ -47,7 +83,7 @@ func (h *QueueHandler) AddSong(c echo.Context) error {
 	source := h.songGetter.GetSongSource(u)
 	source_songId := h.songGetter.GetSongId(u, source)
 
-	song, err := EnsureSongExistance(h, source, source_songId, req, c)
+	song, details, err := EnsureSongExistance(h, source, source_songId, req, c)
 	if err != nil {
 		return err
 	}
@@ -56,18 +92,18 @@ func (h *QueueHandler) AddSong(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
 
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusOK, details)
 }
 
-func EnsureSongExistance(h *QueueHandler, source string, source_songId string, req *addSongRequest, c echo.Context) (*models.Song, error) {
+func EnsureSongExistance(h *QueueHandler, source string, source_songId string, req *addSongRequest, c echo.Context) (*models.Song, *songsLib.SongDetails, error) {
 	song, err := h.songStore.GetSongBySourceAndSongId(source, source_songId)
 	if err == nil {
-		return song, nil
+		return song, nil, nil
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		details, err := h.songGetter.GetSongDetails(req.URL)
 		if err != nil {
-			return nil, c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+			return nil, nil, c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 		}
 
 		song = &models.Song{
@@ -79,13 +115,15 @@ func EnsureSongExistance(h *QueueHandler, source string, source_songId string, r
 		}
 		err = h.songStore.CreateSong(song)
 		if err != nil {
-			return nil, c.JSON(http.StatusInternalServerError, utils.NewError(err))
+			return nil, nil, c.JSON(http.StatusInternalServerError, utils.NewError(err))
 		}
+
+		return song, &details, nil
 	} 
-	return nil, c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	return nil, nil, c.JSON(http.StatusInternalServerError, utils.NewError(err))
 }
 
-func (h *QueueHandler) NextSong(c echo.Context) error {
+func (h *QueueHandler) PlayNextSong(c echo.Context) error {
 	userID, err := auth.UserIDFromToken(c)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, utils.NewError(err))
@@ -95,7 +133,31 @@ func (h *QueueHandler) NextSong(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
 
-	song, err := h.queueStore.NextSong(userID)
+	song, err := h.queueStore.PlayNextSong(userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	}
+
+	details, err := h.songGetter.GetSongDetails(song.URL)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	}
+
+	return c.JSON(http.StatusOK, details)
+}
+
+
+func (h *QueueHandler) GetNextSong(c echo.Context) error {
+	userID, err := auth.UserIDFromToken(c)
+		if err != nil {
+			return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
+
+	if err := h.ensureQueueExists(userID); err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	}
+
+	song, err := h.queueStore.GetNextSong(userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
