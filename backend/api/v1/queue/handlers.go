@@ -3,7 +3,7 @@ package queue
 import (
 	"database/sql"
 	"net/http"
-
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/google/uuid"
 	"backend/utils"
@@ -61,6 +61,7 @@ func (h *QueueHandler) PlaySong(c echo.Context) error {
 }
 
 func (h *QueueHandler) AddSong(c echo.Context) error {
+	fmt.Println("Adding song")
 	userID, err := auth.UserIDFromToken(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
@@ -79,14 +80,16 @@ func (h *QueueHandler) AddSong(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
+	fmt.Println("Parsed URL")
 
 	source := h.songGetter.GetSongSource(u)
 	source_songId := h.songGetter.GetSongId(u, source)
-
+	fmt.Println("Got source and songId")
 	song, details, err := EnsureSongExistance(h, source, source_songId, req, c)
 	if err != nil {
 		return err
 	}
+	fmt.Println("Ensured song existence", err)
 
 	if err := h.queueStore.AddSongToQueue(userID, song.Id); err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
@@ -98,12 +101,14 @@ func (h *QueueHandler) AddSong(c echo.Context) error {
 func EnsureSongExistance(h *QueueHandler, source string, source_songId string, req *addSongRequest, c echo.Context) (*models.Song, *songsLib.SongDetails, error) {
 	song, err := h.songStore.GetSongBySourceAndSongId(source, source_songId)
 	if err == nil {
+		fmt.Println("Song already exists")
 		return song, nil, nil
 	}
 	if errors.Is(err, sql.ErrNoRows) {
+		fmt.Println("Song does not exist")
 		details, err := h.songGetter.GetSongDetails(req.URL)
 		if err != nil {
-			return nil, nil, c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+			return nil, nil, echo.NewHTTPError(http.StatusUnprocessableEntity, utils.NewError(err))
 		}
 
 		song = &models.Song{
@@ -113,14 +118,15 @@ func EnsureSongExistance(h *QueueHandler, source string, source_songId string, r
 			Source:     source,
 			SongID:     source_songId,
 		}
-		err = h.songStore.CreateSong(song)
+		song,err = h.songStore.CreateSong(song)
 		if err != nil {
-			return nil, nil, c.JSON(http.StatusInternalServerError, utils.NewError(err))
+			return nil, nil, echo.NewHTTPError(http.StatusInternalServerError, utils.NewError(err))
 		}
 
 		return song, &details, nil
 	} 
-	return nil, nil, c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	fmt.Println("Error", err)
+	return nil, nil, echo.NewHTTPError(http.StatusInternalServerError, utils.NewError(err))
 }
 
 func (h *QueueHandler) PlayNextSong(c echo.Context) error {

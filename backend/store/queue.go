@@ -2,7 +2,7 @@ package store
 
 import (
 	"backend/models"
-
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -36,7 +36,7 @@ func (ss QueueStore) ChangeCurrentSong(queueId uuid.UUID, songId uuid.UUID) erro
 	defer tx.Rollback()
 
 	var position int
-	err = ss.db.Get(&position, "select current_position from queue where id = $1", queueId)
+	err = ss.db.Get(&position, "select current_position from queue where user_id = $1", queueId)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (ss QueueStore) ChangeCurrentSong(queueId uuid.UUID, songId uuid.UUID) erro
 		return err
 	}
 
-	_, err = tx.Exec("update queue set current_song_id = $1 where id = $2", songId, queueId)
+	_, err = tx.Exec("update queue set current_song_id = $1 where user_id = $2", songId, queueId)
 	if err != nil {
 		return err
 	}
@@ -55,6 +55,7 @@ func (ss QueueStore) ChangeCurrentSong(queueId uuid.UUID, songId uuid.UUID) erro
 }
 
 func (ss QueueStore) AddSongToQueue(queueId uuid.UUID, songId uuid.UUID) error {
+	fmt.Println("Adding song to queue", queueId, songId)
 	tx, err := ss.db.Beginx()
 	if err != nil {
 		return err
@@ -62,18 +63,21 @@ func (ss QueueStore) AddSongToQueue(queueId uuid.UUID, songId uuid.UUID) error {
 	defer tx.Rollback()
 
 	var position int
-	err = ss.db.Get(&position, "select next_position from queue where id = $1", queueId)
+	err = tx.Get(&position, "select next_position from queue where user_id = $1", queueId)
 	if err != nil {
+		fmt.Println("Error getting next position", err)
 		return err
 	}
 
 	_, err = tx.Exec("insert into queue_song (queue_id, song_id, position) values ($1, $2, $3)", queueId, songId, position)
 	if err != nil {
+		fmt.Println("Error inserting song into queue", err)
 		return err
 	}
 
-	_, err = tx.Exec("update queue set next_position = $1 where id = $2", position + 1, queueId)
+	_, err = tx.Exec("update queue set next_position = $1 where user_id = $2", position + 1, queueId)
 	if err != nil {
+		fmt.Println("Error updating next position", err)
 		return err
 	}
 	return tx.Commit()
@@ -81,7 +85,7 @@ func (ss QueueStore) AddSongToQueue(queueId uuid.UUID, songId uuid.UUID) error {
 
 func (ss QueueStore) GetNextSong(queueId uuid.UUID) (*models.Song, error) {
 	song := &models.Song{}
-	err := ss.db.Get(song, "select s.* from songs where song_id = (select song_id from queue_song where queue_id = $1 order by position asc limit 1)", queueId)
+	err := ss.db.Get(song, "select s.* from song s where s.song_id = (select qs.song_id from queue_song qs where qs.queue_id = $1 order by qs.position asc offset 1 limit 1)", queueId)
 	return song, err
 }
 
@@ -104,12 +108,12 @@ func (ss QueueStore) PlayNextSong(queueId uuid.UUID) (*models.Song, error) {
 	}
 
 	song := &models.Song{}
-	err = tx.Get(song, "select s.* from songs where song_id = $1", nextSongPos)
+	err = tx.Get(song, "select * from song where song_id = $1", nextSongPos.SongId)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = tx.Exec("update queue set current_song_id = $1, current_position = $2 where id = $3", song.Id, nextSongPos.Position, queueId)
+	_, err = tx.Exec("update queue set current_song_id = $1, current_position = $2 where user_id = $3", song.Id, nextSongPos.Position, queueId)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +141,7 @@ func (ss QueueStore) ClearQueue(queueId uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec("update queue set current_position = 0, next_position = 0, current_song_id = null where user_id = (select user_id from queue where id = $1)", queueId)
+	_, err = tx.Exec("update queue set current_position = 0, next_position = 0, current_song_id = null where user_id = $1", queueId)
 	if err != nil {
 		return err
 	}
@@ -151,7 +155,7 @@ func (ss QueueStore) RemoveSong(queueId uuid.UUID, songId uuid.UUID) error {
 
 func (ss QueueStore) GetNextPosition(queueId uuid.UUID) (int, error) {
 	var position int
-	err := ss.db.Get(&position, "select next_position from queue where id = $1", queueId)
+	err := ss.db.Get(&position, "select next_position from queue where user_id = $1", queueId)
 	return position, err
 }
 

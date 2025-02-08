@@ -116,15 +116,16 @@ func (s *SongGetter) GetYoutubeDetails(url string) (SongDetails, error) {
 	splited := strings.Split(output_str, "\n")
 
 	splited_time := strings.Split(splited[2], ":")
-	duration_ms := int64(0)
+	duration_s := int64(0)
 	//TODO: test, code generated
 	for i := 0; i < len(splited_time); i++ {
 		val, err := strconv.ParseInt(splited_time[i], 10, 64)
 		if err != nil {
 			return SongDetails{}, fmt.Errorf("failed to parse duration: %w", err)
 		}
-		duration_ms += int64(math.Pow(60, float64(len(splited_time)-i-1))) * val
+		duration_s += int64(math.Pow(60, float64(len(splited_time)-i-1))) * val
 	}
+	duration_ms := duration_s * 1000
 
 	details := SongDetails{
 		Title:      splited[0],

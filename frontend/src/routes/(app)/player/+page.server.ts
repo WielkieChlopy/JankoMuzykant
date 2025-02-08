@@ -23,7 +23,7 @@ export const actions = {
         const formData = await request.formData();
         const url = formData.get('url');
 
-        const response = await fetch(`${BACKEND_URL}/api/v1/queue/`, {
+        const response = await fetch(`${BACKEND_URL}/api/v1/queue/add`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

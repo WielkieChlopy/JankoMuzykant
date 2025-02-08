@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Card from "@/components/ui/card/index.js";
-	
+	import { Button }from "@/components/ui/button/index.js";
+
 	let { data } = $props()
 	let playingSong = $state({
 		url: '',
@@ -36,14 +37,14 @@
 			audio.load()
 		}
 		console.log("play_next_song")
-		const response = await fetch(`${data.backend_url}/api/v1/queue/next`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${data.token}`
-			},
-		})
-		console.log("play_next_song_response", response)
+		// const response = await fetch(`${data.backend_url}/api/v1/queue/next`, {
+		// 	method: 'POST',
+		// 	headers: {
+		// 		'Content-Type': 'application/json',
+		// 		'Authorization': `Bearer ${data.token}`
+		// 	},
+		// })
+		// console.log("play_next_song_response", response)
 		//TODO: handle error
 	}
 
@@ -122,9 +123,14 @@
 		  <Card.Title>Queue</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			<ul>
+			<ul class="space-y-2">
 				{#each data.queue as song}
-					<li>{song.title}</li>
+					<li>
+						<div class="flex flex-row justify-between">
+							<div>{song.Title}: {song.DurationMS}</div>
+							<div class="flex flex-row gap-2"><Button class="w-1/2">Play</Button><Button class="w-1/2">Remove</Button></div>
+						</div>
+					</li>
 				{/each}
 			</ul>
 		</Card.Content>
