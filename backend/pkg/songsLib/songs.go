@@ -21,20 +21,21 @@ type SongDetails struct {
 	PlayUrl    string `json:"play_url"`
 }
 
-// better name, we need stuckt to have an place to put the client for soundcloud
+// better name, we need struct to have an place to put the client for soundcloud
 type SongGetter struct {
 	sc *soundcloudapi.API
-	ss *store.SongStore
+	ss *store.QueueStore
+	cs *store.CacheStore
 }
 
-func NewSongGetter(ss *store.SongStore) (*SongGetter, error) {
+func NewSongGetter(ss *store.QueueStore, cs *store.CacheStore) (*SongGetter, error) {
 	sc, err := soundcloudapi.New(soundcloudapi.APIOptions{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &SongGetter{sc: sc, ss: ss}, nil
+	return &SongGetter{sc: sc, ss: ss, cs: cs}, nil
 }
 
 func (s *SongGetter) GetSongDetails(song_url string) (SongDetails, error) {
@@ -48,16 +49,16 @@ func (s *SongGetter) GetSongDetails(song_url string) (SongDetails, error) {
 		return SongDetails{}, fmt.Errorf("invalid url")
 	}
 
-	source := GetSongSource(u)
-	song_id := s.getSongId(u, source)
+	source := s.GetSongSource(u)
+	song_id := s.GetSongId(u, source)
 
-	song_in_cache, err := s.ss.IsSongInCache(song_id, source)
+	song_in_cache, err := s.cs.IsSongInCache(song_id, source)
 	if err != nil {
 		return SongDetails{}, fmt.Errorf("failed to get song: %w", err)
 	}
 
 	if song_in_cache {
-		song, err := s.ss.GetSong(song_id, source)
+		song, err := s.cs.GetSong(song_id, source)
 		if err != nil {
 			return SongDetails{}, fmt.Errorf("failed to get song: %w", err)
 		}
@@ -82,7 +83,7 @@ func (s *SongGetter) GetSongDetails(song_url string) (SongDetails, error) {
 	return SongDetails{}, fmt.Errorf("unsupported url")
 }
 
-func GetSongSource(u *url.URL) string {
+func (s *SongGetter) GetSongSource(u *url.URL) string {
 	source := ""
 	if strings.HasSuffix(u.Host, "youtube.com") || strings.HasSuffix(u.Host, "youtu.be") {
 		source = "youtube"
@@ -115,15 +116,16 @@ func (s *SongGetter) GetYoutubeDetails(url string) (SongDetails, error) {
 	splited := strings.Split(output_str, "\n")
 
 	splited_time := strings.Split(splited[2], ":")
-	duration_ms := int64(0)
+	duration_s := int64(0)
 	//TODO: test, code generated
 	for i := 0; i < len(splited_time); i++ {
 		val, err := strconv.ParseInt(splited_time[i], 10, 64)
 		if err != nil {
 			return SongDetails{}, fmt.Errorf("failed to parse duration: %w", err)
 		}
-		duration_ms += int64(math.Pow(60, float64(len(splited_time)-i-1))) * val
+		duration_s += int64(math.Pow(60, float64(len(splited_time)-i-1))) * val
 	}
+	duration_ms := duration_s * 1000
 
 	details := SongDetails{
 		Title:      splited[0],
@@ -165,7 +167,7 @@ func (s *SongGetter) GetSoundcloudDetails(url string) (SongDetails, error) {
 	return details, nil
 }
 
-func (s *SongGetter) getSongId(u *url.URL, source string) string {
+func (s *SongGetter) GetSongId(u *url.URL, source string) string {
 	if source == "youtube" {
 		return u.Query().Get("v")
 	} else if source == "soundcloud" {
@@ -223,7 +225,7 @@ func (s *SongGetter) insertSoundcloudSongInCache(song_url string, song_details S
 
 
 func (s *SongGetter) insertSongInCache(song_id string, song_url string, source string, expires_at int64, song_details SongDetails) {
-	err := s.ss.InsertSong(&models.SongMapping{
+	err := s.cs.InsertSong(&models.SongMapping{
 		SongID:     song_id,
 		Source:     source,
 		ExpiresAt:  time.Unix(expires_at, 0),
@@ -236,3 +238,4 @@ func (s *SongGetter) insertSongInCache(song_id string, song_url string, source s
 		fmt.Printf("failed to insert song in cache: %v\n", err)
 	}
 }
+
