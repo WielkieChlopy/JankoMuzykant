@@ -62,6 +62,24 @@ create unlogged table if not exists "songs_cache"
     created_at    timestamp   not null default now(),
 	primary key (song_id, source)
 );
+
+create table if not exists "playlist"
+(
+	id            uuid        primary key default gen_random_uuid(),
+	user_id       uuid        not null references "user" (id),
+	name          text        not null,
+	created_at    timestamp   not null default now(),
+	updated_at    timestamp   not null default now()
+);
+
+create table if not exists "playlist_song"
+(
+    playlist_id      uuid        not null references "playlist" (id),
+    song_id          uuid        not null references "song" (id),
+	position         int         not null,
+	created_at       timestamp   not null default now(),
+	primary key (playlist_id, song_id)
+);
 `
 
 type DbConfig struct {

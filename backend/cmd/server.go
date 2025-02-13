@@ -15,9 +15,10 @@ func main() {
 	us := store.NewUserStore(db)
 	songS := store.NewSongStore(db)
 	queueS := store.NewQueueStore(db)
+	playlistS := store.NewPlaylistStore(db)
 	cacheS := store.NewCacheStore(db)
 
-	h, err := v1.NewHandler(us, songS, queueS, cacheS)
+	h, err := v1.NewHandler(us, songS, queueS, playlistS, cacheS)
 	if err != nil {
 		log.Fatal(err)
 	}

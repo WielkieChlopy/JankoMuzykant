@@ -25,17 +25,18 @@ type SongDetails struct {
 type SongGetter struct {
 	sc *soundcloudapi.API
 	ss *store.QueueStore
+	ps *store.PlaylistStore
 	cs *store.CacheStore
 }
 
-func NewSongGetter(ss *store.QueueStore, cs *store.CacheStore) (*SongGetter, error) {
+func NewSongGetter(ss *store.QueueStore, ps *store.PlaylistStore, cs *store.CacheStore) (*SongGetter, error) {
 	sc, err := soundcloudapi.New(soundcloudapi.APIOptions{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &SongGetter{sc: sc, ss: ss, cs: cs}, nil
+	return &SongGetter{sc: sc, ss: ss, ps: ps, cs: cs}, nil
 }
 
 func (s *SongGetter) GetSongDetails(song_url string) (SongDetails, error) {
