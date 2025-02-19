@@ -40,14 +40,14 @@ func (h *PlaylistHandler) Register(group *echo.Group) {
 		},
 	})
 
-	playlist := group.Group("/playlist", jwtMiddleware)
+	playlists := group.Group("/playlists", jwtMiddleware)
 	
-	playlist.GET("", h.GetPlaylists)
-	playlist.GET("/:id", h.GetPlaylist)
-	playlist.POST("", h.CreatePlaylist)
-	playlist.POST("/:id/song/add", h.AddSongToPlaylist)
-	playlist.PUT("/:id", h.EditPlaylist)
-	playlist.PUT("/:id/song/reorder", h.ReorderPlaylist)
-	playlist.DELETE(":id", h.RemovePlaylist)
-	playlist.DELETE("/:id/song/:song_id", h.RemoveSong)
+	playlists.GET("", h.GetPlaylists)
+	playlists.GET("/:id", h.GetPlaylist)
+	playlists.POST("", h.CreatePlaylist)
+	playlists.POST("/:id/song/add", h.AddSongToPlaylist)
+	playlists.PUT("/:id", h.EditPlaylist)
+	playlists.PUT("/:id/song/reorder", h.ReorderPlaylist)
+	playlists.DELETE("/:id", h.RemovePlaylist)
+	playlists.DELETE("/:id/song/:song_id", h.RemoveSong)
 }

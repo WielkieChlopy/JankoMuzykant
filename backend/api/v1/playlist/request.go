@@ -7,7 +7,7 @@ import (
 
 type addSongRequest struct {
 	URL string `json:"url" validate:"required"`
-	PlaylistID uuid.UUID `json:"playlist_id" validate:"required"`
+	//PlaylistID uuid.UUID `json:"playlist_id" validate:"required"`
 }
 
 type removeSongRequest struct {
@@ -19,8 +19,7 @@ type createPlaylistRequest struct {
 }
 
 type editPlaylistRequest struct {
-	ID uuid.UUID `json:"id" validate:"required"`
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
 }
 
 func (r *addSongRequest) bind(c echo.Context) error {
@@ -53,7 +52,7 @@ func (r *createPlaylistRequest) bind(c echo.Context) error {
 	return nil
 }
 
-func (r editPlaylistRequest) bind(c echo.Context) error {
+func (r *editPlaylistRequest) bind(c echo.Context) error {
 	if err := c.Bind(r); err != nil {
 		return err
 	}

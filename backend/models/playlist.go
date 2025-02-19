@@ -12,12 +12,12 @@ type Playlist struct {
 	PlaylistName        string    `db:"name"`
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
-	//Songs	   []Song    `db:"songs"`
+	//Songs	   []Song    `db:"-"`
 }
 
 type PlaylistSong struct {
 	PlaylistID uuid.UUID `db:"playlist_id"`
-	SongID    uuid.UUID `db:"song_id"`
+	SongID    string `db:"song_id"`
 	Position  int       `db:"position"`
 	CreatedAt time.Time `db:"created_at"`
 }

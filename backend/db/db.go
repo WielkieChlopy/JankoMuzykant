@@ -63,7 +63,7 @@ create unlogged table if not exists "songs_cache"
 	primary key (song_id, source)
 );
 
-create table if not exists "playlist"
+create table if not exists "playlists"
 (
 	id            uuid        primary key default gen_random_uuid(),
 	user_id       uuid        not null references "user" (id),
@@ -74,8 +74,8 @@ create table if not exists "playlist"
 
 create table if not exists "playlist_song"
 (
-    playlist_id      uuid        not null references "playlist" (id),
-    song_id          uuid        not null references "song" (id),
+    playlist_id      uuid        not null references "playlists" (id) on delete cascade,
+    song_id          uuid        not null references "song" (id) on delete cascade,
 	position         int         not null,
 	created_at       timestamp   not null default now(),
 	primary key (playlist_id, song_id)

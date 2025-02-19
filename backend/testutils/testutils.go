@@ -15,13 +15,14 @@ import (
 )
 
 type Test struct {
-	Database  *sqlx.DB
-	UserStore *store.UserStore
-	SongStore *store.SongStore
-	QueueStore *store.QueueStore
-	CacheStore *store.CacheStore
-	Handler   *v1.Handler
-	Router    *echo.Echo
+	Database      *sqlx.DB
+	UserStore     *store.UserStore
+	SongStore     *store.SongStore
+	QueueStore    *store.QueueStore
+	PlaylistStore *store.PlaylistStore
+	CacheStore    *store.CacheStore
+	Handler       *v1.Handler
+	Router        *echo.Echo
 }
 
 func SetupTest() (*Test, error) {
@@ -36,8 +37,10 @@ func SetupTest() (*Test, error) {
 	t.UserStore = store.NewUserStore(db)
 	t.SongStore = store.NewSongStore(db)
 	t.QueueStore = store.NewQueueStore(db)
+	t.PlaylistStore = store.NewPlaylistStore(db)
 	t.CacheStore = store.NewCacheStore(db)
-	h, err := v1.NewHandler(t.UserStore, t.SongStore, t.QueueStore, t.CacheStore)
+	h, err := v1.NewHandler(t.UserStore, t.SongStore, t.QueueStore, t.PlaylistStore, t.CacheStore)
+
 	if err != nil {
 		return nil, err
 	}
