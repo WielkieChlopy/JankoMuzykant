@@ -3,11 +3,13 @@ package playlist
 import (
 	auth "backend/auth"
 	"backend/models"
+	"backend/pkg/songsLib"
 	"backend/utils"
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-	//"strings"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -30,17 +32,17 @@ func (h *PlaylistHandler) GetPlaylists(c echo.Context) error {
 
 func (h *PlaylistHandler) GetPlaylist(c echo.Context) error {
 	fmt.Println("Getting playlist")
-	userID, err := auth.UserIDFromToken(c)
+	_, err := auth.UserIDFromToken(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
 	}
 
-	id, err := uuid.Parse(c.Param("id"))
+	playlistID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
 
-	playlist, err := h.playlistStore.GetPlaylistWithSongs(id, userID)
+	playlist, err := h.playlistStore.GetPlaylistWithSongs(playlistID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
@@ -72,10 +74,9 @@ func (h *PlaylistHandler) CreatePlaylist(c echo.Context) error {
 	return c.JSON(http.StatusOK, playlist)
 }
 
-func (h *PlaylistHandler) AddSongToPlaylist(c echo.Context) error {
+func (h *PlaylistHandler) AddSong(c echo.Context) error {
     fmt.Println("Adding song to playlist")
-	//TODO: nie wiem czy jesli UserID jest nieuzywany to moze byc bez indexu czy calkiem elo
-    userID, err := auth.UserIDFromToken(c)
+    _, err := auth.UserIDFromToken(c)
     if err != nil {
         return c.JSON(http.StatusUnauthorized, utils.NewError(err))
     }
@@ -89,15 +90,29 @@ func (h *PlaylistHandler) AddSongToPlaylist(c echo.Context) error {
     if err != nil {
         return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
     }
+	fmt.Println("Parsed URL")
 
 	source := h.songGetter.GetSongSource(u)
 	sourceSongID := h.songGetter.GetSongId(u, source)
+	fmt.Println("Got source and songId")
 
-    if err := h.playlistStore.AddSongToPlaylist(userID, sourceSongID); err != nil {
+	song, details, err := EnsureSongExistance(h, source, sourceSongID, req, c)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Ensured song existence", err)
+
+	playlistID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+	}
+
+    if err := h.playlistStore.AddSongToPlaylist(playlistID, song.Id); err != nil {
         return c.JSON(http.StatusInternalServerError, utils.NewError(err))
     }
 
-    return c.JSON(http.StatusOK, "Song added to playlist")
+	fmt.Println("Added song to playlist")
+    return c.JSON(http.StatusOK, details)
 }
 
 func (h *PlaylistHandler) EditPlaylist(c echo.Context) error {
@@ -123,28 +138,88 @@ func (h *PlaylistHandler) EditPlaylist(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, "Playlist edited")
 }
-// TODO:
-func (h *PlaylistHandler) ReorderPlaylist(c echo.Context) error {
-	return nil
-}
 
-func (h *PlaylistHandler) RemoveSong(c echo.Context) error {
-	fmt.Println("Removing song from playlist")
-	userID, err := auth.UserIDFromToken(c)
+func (h *PlaylistHandler) ReorderPlaylist(c echo.Context) error {
+	fmt.Println("Reordering playlist")
+	_, err := auth.UserIDFromToken(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
 	}
-	req := &removeSongRequest{}
 
+	playlistID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+	}
+	
+	req := &reorderPlaylistRequest{}
 	if err := req.bind(c); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
 
-	if err := h.playlistStore.RemoveSongFromPlaylist(userID, req.SongID); err != nil {
+	songID, err := uuid.Parse(c.Param("song_id"))
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+	}
+
+	if err := h.playlistStore.ReorderSongsInPlaylist(playlistID, songID, req.Position); err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
+	}
+
+	return c.JSON(http.StatusOK, "Playlist reordered")
+}
+
+func (h *PlaylistHandler) RemoveSong(c echo.Context) error {
+	fmt.Println("Removing song from playlist")
+	_, err := auth.UserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewError(err))
+	}
+
+	songID, err := uuid.Parse(c.Param("song_id"))
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+	}
+	playlistID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
+	}
+
+	if err := h.playlistStore.RemoveSongFromPlaylist(playlistID, songID); err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
 
 	return c.JSON(http.StatusOK, "Song removed from playlist")
+}
+
+func EnsureSongExistance(h *PlaylistHandler, source string, sourceSongID string, req *addSongRequest, c echo.Context) (*models.Song, *songsLib.SongDetails, error) {
+	song, err := h.songStore.GetSongBySourceAndSongId(source, sourceSongID)
+	if err == nil {
+		fmt.Println("Song already exists")
+		return song, nil, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		fmt.Println("Song does not exist")
+		details, err := h.songGetter.GetSongDetails(req.URL)
+		if err != nil {
+			return nil, nil, echo.NewHTTPError(http.StatusUnprocessableEntity, utils.NewError(err))
+		}
+
+		song = &models.Song{
+			Title:      details.Title,
+			DurationMS: int(details.DurationMS),
+			URL:        req.URL,
+			Source:     source,
+			SongID:     sourceSongID,
+		}
+		song,err = h.songStore.CreateSong(song)
+		if err != nil {
+			return nil, nil, echo.NewHTTPError(http.StatusInternalServerError, utils.NewError(err))
+		}
+
+		return song, &details, nil
+	} 
+	fmt.Println("Error", err)
+	return nil, nil, echo.NewHTTPError(http.StatusInternalServerError, utils.NewError(err))
 }
 
 func (h *PlaylistHandler) RemovePlaylist(c echo.Context) error {

@@ -45,9 +45,9 @@ func (h *PlaylistHandler) Register(group *echo.Group) {
 	playlists.GET("", h.GetPlaylists)
 	playlists.GET("/:id", h.GetPlaylist)
 	playlists.POST("", h.CreatePlaylist)
-	playlists.POST("/:id/song/add", h.AddSongToPlaylist)
+	playlists.POST("/:id/song/add", h.AddSong)
 	playlists.PUT("/:id", h.EditPlaylist)
-	playlists.PUT("/:id/song/reorder", h.ReorderPlaylist)
+	playlists.PUT("/:id/song/:song_id/reorder", h.ReorderPlaylist)
 	playlists.DELETE("/:id", h.RemovePlaylist)
 	playlists.DELETE("/:id/song/:song_id", h.RemoveSong)
 }
