@@ -25,23 +25,29 @@ create table if not exists "song"
     id            uuid primary key default gen_random_uuid(),
     title         text        not null,
     duration_ms   int         not null,
-    play_url      text        not null,
     url           text        not null,
-	user_id       uuid        not null references "user" (id),
-	created_at    timestamp   not null default now()
+	source        text        not null,
+	song_id       text        not null,
+	created_at    timestamp   not null default now(),
+	updated_at    timestamp   not null default now()
 );
 
 create table if not exists "queue"
 (
-    user_id       uuid        primary key not null references "user" (id),
-	created_at    timestamp   not null default now()
+    user_id          uuid        primary key not null references "user" (id),
+	next_position    int         not null default 0,
+	current_position int         not null default 0,
+	current_song_id  uuid,
+	created_at       timestamp   not null default now()
 );
 
 create table if not exists "queue_song"
 (
-    id            uuid primary key default gen_random_uuid(),
     queue_id      uuid        not null,
-    song_id       uuid        not null
+    song_id       uuid        not null,
+	position      int         not null,
+	created_at    timestamp   not null default now(),
+	primary key (queue_id, song_id)
 );
 
 create unlogged table if not exists "songs_cache"
@@ -55,6 +61,24 @@ create unlogged table if not exists "songs_cache"
 	expires_at    timestamp   not null,
     created_at    timestamp   not null default now(),
 	primary key (song_id, source)
+);
+
+create table if not exists "playlists"
+(
+	id            uuid        primary key default gen_random_uuid(),
+	user_id       uuid        not null references "user" (id),
+	name          text        not null,
+	created_at    timestamp   not null default now(),
+	updated_at    timestamp   not null default now()
+);
+
+create table if not exists "playlist_song"
+(
+    playlist_id      uuid        not null references "playlists" (id) on delete cascade,
+    song_id          uuid        not null references "song" (id) on delete cascade,
+	position         int         not null,
+	created_at       timestamp   not null default now(),
+	primary key (playlist_id, song_id)
 );
 `
 
