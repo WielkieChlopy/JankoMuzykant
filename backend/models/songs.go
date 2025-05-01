@@ -10,10 +10,11 @@ type Song struct {
 	Id         uuid.UUID `db:"id"`
 	Title      string    `db:"title"`
 	DurationMS int       `db:"duration_ms"`
-	PlayUrl    string    `db:"play_url"`
 	URL        string    `db:"url"`
-	UserId     uuid.UUID `db:"user_id"`
+	Source     string    `db:"source"`
+	SongID     string    `db:"song_id"`
 	CreatedAt  time.Time `db:"created_at"`
+	UpdatedAt  time.Time `db:"updated_at"`
 }
 
 type SongMapping struct {
