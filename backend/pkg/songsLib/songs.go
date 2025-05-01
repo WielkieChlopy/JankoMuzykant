@@ -41,12 +41,12 @@ func NewSongGetter(ss *store.QueueStore, cs *store.CacheStore) (*SongGetter, err
 func (s *SongGetter) GetSongDetails(song_url string) (SongDetails, error) {
 	u, err := url.Parse(song_url)
 	if err != nil {
-		return SongDetails{}, err
+		return SongDetails{}, fmt.Errorf("failed to parse url: %w", err)
 	}
 
 	valid, err := s.VerifyURL(u)
 	if !valid || err != nil {
-		return SongDetails{}, fmt.Errorf("invalid url")
+		return SongDetails{}, fmt.Errorf("invalid url: %w", err)
 	}
 
 	source := s.GetSongSource(u)

@@ -32,20 +32,21 @@
 	}
 
 	async function playNextSong() {
-		playingSong = nextSong
+		console.log("play_next_song")
+		const response = await fetch(`${data.backend_url}/api/v1/queue/next`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${data.token}`
+			},
+		})
+		console.log("play_next_song_response", response)
+		playingSong = await response.json()
+		tenSecondNotificationSent = false
 		if (audio) {
 			audio.load()
 		}
-		console.log("play_next_song")
-		// const response = await fetch(`${data.backend_url}/api/v1/queue/next`, {
-		// 	method: 'POST',
-		// 	headers: {
-		// 		'Content-Type': 'application/json',
-		// 		'Authorization': `Bearer ${data.token}`
-		// 	},
-		// })
-		// console.log("play_next_song_response", response)
-		//TODO: handle error
+		// TODO: handle error
 	}
 
 	function onTimeUpdate(e: Event) {
@@ -60,6 +61,9 @@
 		}
 	}
 
+	function playQueueSong(song: any) {
+		console.log("play_queue_song", song)
+	}
 
 	function onEnded() {
 		console.log("ended")
@@ -123,12 +127,13 @@
 		  <Card.Title>Queue</Card.Title>
 		</Card.Header>
 		<Card.Content>
+			<Button onclick={() => playNextSong()}>Play Next</Button>
 			<ul class="space-y-2">
 				{#each data.queue as song}
 					<li>
 						<div class="flex flex-row justify-between">
 							<div>{song.Title}: {song.DurationMS}</div>
-							<div class="flex flex-row gap-2"><Button class="w-1/2">Play</Button><Button class="w-1/2">Remove</Button></div>
+							<div class="flex flex-row gap-2"><Button onclick={() => playQueueSong(song)} class="w-1/2">Play</Button><Button class="w-1/2">Remove</Button></div>
 						</div>
 					</li>
 				{/each}

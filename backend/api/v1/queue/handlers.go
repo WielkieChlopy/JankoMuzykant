@@ -17,10 +17,10 @@ import (
 func (h *QueueHandler) ensureQueueExists(userID uuid.UUID) error {
 	exists, err := h.queueStore.QueueExists(userID)
 	if err != nil {
-		return err
+		return fmt.Errorf("error checking if queue exists: %w", err)
 	}
 	if !exists {
-		return h.queueStore.InitQueue(userID)
+		return fmt.Errorf("error initializing queue: %w", h.queueStore.InitQueue(userID))
 	}
 	return nil
 }
@@ -139,6 +139,7 @@ func (h *QueueHandler) PlayNextSong(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
 
+	fmt.Println("Playing Next Song")
 	song, err := h.queueStore.PlayNextSong(userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
